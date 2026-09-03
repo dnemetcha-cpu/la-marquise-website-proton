@@ -21,7 +21,7 @@ type TabKey = "starters" | "mains" | "desserts" | "sweets";
 
 // ---- SVG icon set (inline, fast, no external requests) ----
 const ICONS: Record<string, (props: { size?: number }) => ReactElement> = {
-  phone: () => <Icon paths="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.4 2.1L8 9.6a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.4c.8.3 1.7.5 2.6.6A2 2 0 0 1 22 16.9z" />,
+  phone: () => <Icon paths="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.4 2.1L8 9.6a16 16 0 0 0 6 6l1.5-2.4a2 2 0 0 1 2.1-.4c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z" />,
   pin: () => <Icon paths="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z M9.5 10a2.5 2.5 0 1 0 5 0 2.5 2.5 0 0 0-5 0" />,
   clock: () => <Icon paths="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 3" />,
   mail: () => <Icon paths="M4 6h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z m20 2-8 6-8-6" />,
@@ -55,10 +55,8 @@ function renderIcon(name: string) {
 export default function HomePage() {
   const { lang, switchLang, t } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [bookingOpen, setBookingOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("starters");
   const [activeLevel, setActiveLevel] = useState<MenuLevel>("gastronomic");
-  const [formState, setFormState] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   const menu = getMenu(lang);
@@ -74,10 +72,9 @@ export default function HomePage() {
   ];
 
   useEffect(() => {
-    document.body.style.overflow = bookingOpen ? "hidden" : "";
+    document.body.style.overflow = menuOpen ? "hidden" : "";
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setBookingOpen(false);
         setMenuOpen(false);
       }
     };
@@ -86,33 +83,7 @@ export default function HomePage() {
       document.body.style.overflow = "";
       window.removeEventListener("keydown", onKey);
     };
-  }, [bookingOpen]);
-
-  const closeBooking = () => {
-    setBookingOpen(false);
-    window.setTimeout(() => setFormState("idle"), 300);
-  };
-
-  const handleReservation = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setFormState("submitting");
-    const form = new FormData(event.currentTarget);
-    try {
-      const response = await fetch("/api/reservations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(Object.fromEntries(form.entries())),
-      });
-      if (!response.ok) {
-        const data = await response.json().catch(() => null);
-        throw new Error(data?.error || "Could not send");
-      }
-      setFormState("success");
-      event.currentTarget.reset();
-    } catch {
-      setFormState("error");
-    }
-  };
+  }, [menuOpen]);
 
   const handleNav = (id: string) => {
     setMenuOpen(false);
@@ -171,7 +142,6 @@ export default function HomePage() {
             <a href="#info" onClick={() => handleNav("info")}>{t("nav.visit")}</a>
             <a href="#services" onClick={() => handleNav("services")}>{t("nav.services")}</a>
             <a href="#faq" onClick={() => handleNav("faq")}>{t("nav.faq")}</a>
-            <button type="button" className="nav-cta-mobile" onClick={() => { setMenuOpen(false); setBookingOpen(true); }}>{t("nav.book")}</button>
           </nav>
 
           <div className="nav-actions">
@@ -180,7 +150,6 @@ export default function HomePage() {
               <button type="button" className={`lang-btn ${lang === "fr" ? "active" : ""}`} onClick={switchTo("fr")} aria-pressed={lang === "fr"}>FR</button>
             </div>
             <a href={`tel:${site.phone.replace(/\s/g, "")}`} className="nav-phone"><ICONS.phone /> <span>{t("nav.call")}</span></a>
-            <button type="button" className="nav-booking" onClick={() => setBookingOpen(true)}>{t("nav.book")} <span className="arrow">→</span></button>
             <button type="button" className="menu-toggle" aria-label={menuOpen ? t("aria.close") : "Menu"} aria-expanded={menuOpen} onClick={() => setMenuOpen((v) => !v)}>
               <span className={`menu-icon ${menuOpen ? "is-open" : ""}`}><span /><span /></span>
             </button>
@@ -204,7 +173,7 @@ export default function HomePage() {
           <h1>{t("hero.title1")}<br /><em>{t("hero.title2")}</em><br />{t("hero.title3")}</h1>
           <p className="hero-text">{t("hero.text")}</p>
           <div className="hero-actions">
-            <button type="button" className="button button-gold" onClick={() => setBookingOpen(true)}>{t("hero.book")} <span className="arrow">→</span></button>
+            <a href={`tel:${site.phone.replace(/\s/g, "")}`} className="button button-gold"><ICONS.phone /> {t("hero.call")} <span className="arrow">→</span></a>
             <a className="text-link text-link-light" href="#menu" onClick={() => handleNav("menu")}>{t("hero.menu")} <span className="arrow">→</span></a>
           </div>
           <div className="hero-badges">
@@ -224,9 +193,9 @@ export default function HomePage() {
           { icon: "utensils", label: t("quick.gastro"), target: "menu" },
           { icon: "burger", label: t("quick.fastfood"), target: "services" },
           { icon: "clock", label: t("quick.hours"), target: "info" },
-          { icon: "party", label: t("quick.events"), target: "booking" },
+          { icon: "party", label: t("quick.events"), target: "services" },
         ].map((item) => (
-          <button key={item.label} className="quick-link" onClick={() => item.target === "booking" ? setBookingOpen(true) : handleNav(item.target)}>
+          <button key={item.label} className="quick-link" onClick={() => handleNav(item.target)}>
             <span className="quick-icon">{renderIcon(item.icon)}</span>
             {item.label}
           </button>
@@ -274,8 +243,8 @@ export default function HomePage() {
 
         <div className="menu-panel">
           <div className="level-toggle" role="tablist" aria-label={t("menu.eyebrow")}>
-            <button role="tab" aria-selected={activeLevel === "gastronomic"} className={activeLevel === "gastronomic" ? "active" : ""} onClick={() => setActiveLevel("gastronomic")}>{renderIcon("utensils")} {t("menu.gastronomic")}</button>
-            <button role="tab" aria-selected={activeLevel === "fastfood"} className={activeLevel === "fastfood" ? "active" : ""} onClick={() => setActiveLevel("fastfood")}>{renderIcon("burger")} {t("menu.fastfood")}</button>
+            <button role="tab" aria-selected={activeLevel === "gastronomic"} className={activeLevel === "gastronomic" ? "active" : ""} onClick={() => setActiveLevel("gastronomic")}>{renderIcon("utensils")} {t("menu.gastro")}</button>
+            <button role="tab" aria-selected={activeLevel === "fastfood"} className={activeLevel === "fastfood" ? "active" : ""} onClick={() => setActiveLevel("fastfood")}>{renderIcon("burger")} {t("menu.fast")}</button>
             <button role="tab" aria-selected={activeLevel === "bar"} className={activeLevel === "bar" ? "active" : ""} onClick={() => setActiveLevel("bar")}>{renderIcon("cocktail")} {t("menu.bar")}</button>
           </div>
 
@@ -455,8 +424,8 @@ export default function HomePage() {
             <h2 dangerouslySetInnerHTML={{ __html: t("cta.title") }} />
             <p>{t("cta.text")}</p>
             <div className="cta-actions">
-              <button type="button" className="button button-gold" onClick={() => setBookingOpen(true)}>{t("cta.book")} <span className="arrow">→</span></button>
-              <a href={`tel:${site.phone.replace(/\s/g, "")}`} className="button button-outline-light"><ICONS.phone /> {site.phone}</a>
+              <a href={`tel:${site.phone.replace(/\s/g, "")}`} className="button button-gold"><ICONS.phone /> {t("cta.call")} <span className="arrow">→</span></a>
+              <a href={site.mapsUrl} target="_blank" rel="noreferrer" className="button button-outline-light"><ICONS.pin /> {t("cta.visit")} <span className="arrow">→</span></a>
             </div>
           </div>
         </div>
@@ -505,57 +474,6 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
-
-      {/* ===== BOOKING MODAL ===== */}
-      {bookingOpen && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) closeBooking(); }}>
-          <div className="booking-modal" role="dialog" aria-modal="true" aria-labelledby="booking-title">
-            <button type="button" className="modal-close" onClick={closeBooking} aria-label={t("aria.close")}>×</button>
-            {formState === "success" ? (
-              <div className="booking-success">
-                <span className="success-check">✓</span>
-                <p className="eyebrow center-eyebrow"><span className="eyebrow-line" /> {t("book.success.eyebrow")}</p>
-                <h2 dangerouslySetInnerHTML={{ __html: t("book.success.title") }} />
-                <p>{t("book.success.text")}</p>
-                <a href={`tel:${site.phone.replace(/\s/g, "")}`} className="button button-gold"><ICONS.phone /> {t("book.success.call")}</a>
-                <button type="button" className="text-link" onClick={closeBooking}>{t("book.success.done")} <span className="arrow">→</span></button>
-              </div>
-            ) : (
-              <>
-                <div className="modal-heading">
-                  <p className="eyebrow"><span className="eyebrow-line" /> {t("book.eyebrow")}</p>
-                  <h2 id="booking-title" dangerouslySetInnerHTML={{ __html: t("book.title") }} />
-                  <p>{t("book.text", { phone: site.phone })}</p>
-                </div>
-                <form className="booking-form" onSubmit={handleReservation}>
-                  <div className="form-grid">
-                    <label><span>{t("book.name")}</span><input name="name" type="text" placeholder="e.g. Amélie Njoya" required /></label>
-                    <label><span>{t("book.phone")}</span><input name="phone" type="tel" placeholder="+237 ..." required /></label>
-                    <label><span>{t("book.email")}</span><input name="email" type="email" placeholder="you@email.com" required /></label>
-                    <label><span>{t("book.guests")}</span><select name="guests" defaultValue="2" required>
-                      {[1, 2, 3, 4, 5, 6].map((g) => (
-                        <option key={g} value={String(g)}>{g === 6 ? t("guests.6") : t(`guests.${g}`)}</option>
-                      ))}
-                    </select></label>
-                    <label><span>{t("book.date")}</span><input name="date" type="date" required /></label>
-                    <label><span>{t("book.time")}</span><select name="time" defaultValue="19:30" required><option>12:00</option><option>13:00</option><option>18:30</option><option>19:00</option><option>19:30</option><option>20:00</option><option>20:30</option><option>21:00</option></select></label>
-                    <label className="span-2"><span>{t("book.level")}</span><select name="level" defaultValue="gastronomic">
-                      <option value="gastronomic">{t("book.level.gastro")}</option>
-                      <option value="fastfood">{t("book.level.fastfood")}</option>
-                      <option value="event">{t("book.level.event")}</option>
-                    </select></label>
-                    <label className="span-2"><span>{t("book.occasion")} <small>{t("book.optional")}</small></span><input name="occasion" type="text" placeholder={t("book.placeholder.occasion")} /></label>
-                    <label className="span-2"><span>{t("book.note")} <small>{t("book.optional")}</small></span><textarea name="message" rows={2} placeholder={t("book.placeholder.note")}></textarea></label>
-                  </div>
-                  {formState === "error" && <p className="form-error">{t("book.error", { phone: site.phone })}</p>}
-                  <button type="submit" className="button button-gold form-submit" disabled={formState === "submitting"}>{formState === "submitting" ? t("book.submitting") : t("book.submit")} <span className="arrow">→</span></button>
-                  <p className="form-footnote">{t("book.footnote")}</p>
-                </form>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </main>
   );
 }
