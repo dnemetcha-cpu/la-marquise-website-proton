@@ -1,12 +1,18 @@
 {
-  "name": "nextjs-postgresql-template",
+  "name": "la-marquise-restaurant-website",
+  "version": "1.0.0",
+  "description": "La Marquise — Restaurant & Lounge in Douala, Cameroon",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "migrate:push": "drizzle-kit push:pg",
+    "migrate:generate": "drizzle-kit generate:pg",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "dotenv": "17.3.1",
@@ -26,7 +32,11 @@
     "eslint": "9.39.4",
     "eslint-config-next": "16.2.6",
     "postcss": "8.5.8",
+    "prettier": "3.1.1",
     "tailwindcss": "4.1.17",
     "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
